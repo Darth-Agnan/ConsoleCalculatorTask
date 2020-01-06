@@ -30,8 +30,14 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="ConsoleCalculatorTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ConsoleCalculator\ConsoleCalculator.csproj">
+      <Project>{E0F64B55-5FA1-4664-88FC-50ED9BFAD4D8}</Project>
+      <Name>ConsoleCalculator</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -2,11 +2,12 @@
 
 namespace ConsoleCalculatorTask
 {
-    class MainClass
+    class ConsoleCalculatorTask
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var calculator = new ConsoleCalculator.ConsoleCalculator();
+            calculator.Run();
         }
     }
 }
