@@ -41,6 +41,8 @@
     <Compile Include="ConsoleMessages.cs" />
     <Compile Include="CalculatorOperators.cs" />
     <Compile Include="ConsoleCalculator_Tests.cs" />
+    <Compile Include="IOperation.cs" />
+    <Compile Include="Operations.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Reflection;
 
 namespace ConsoleCalculator
 {
@@ -221,45 +222,15 @@ namespace ConsoleCalculator
         /// <returns></returns>
         public ResultStatus DoOperation()
         {
-            switch (Operator)
-            {
-                case CalculatorOperators.Add:
-                    Result = Operand1 + Operand2;
-                    return ResultStatus.OK;
-                case CalculatorOperators.Substract:
-                    Result = Operand1 - Operand2;
-                    return ResultStatus.OK;
-                case CalculatorOperators.Multiply:
-                    Result = Operand1 * Operand2;
-                    return ResultStatus.OK;
-                case CalculatorOperators.Divide:
-                    if (Math.Abs(Operand2) < 1e-10)
-                        return ResultStatus.DivisionByZero;
-                    Result = Operand1 / Operand2;
-                    return ResultStatus.OK;
-                case CalculatorOperators.POW:
-                    Result = Math.Pow(Operand1, Operand2);
-                    return ResultStatus.OK;
-                case CalculatorOperators.MPlus:
-                    Memory += Result;
-                    return ResultStatus.OK;
-                case CalculatorOperators.MMinus:
-                    Memory -= Result;
-                    return ResultStatus.OK;
-                case CalculatorOperators.MR:
-                    Result = Memory;
-                    return ResultStatus.OK;
-                case CalculatorOperators.MC:
-                    Memory = 0;
-                    return ResultStatus.OK;
-                case CalculatorOperators.Help:
-                    Console.WriteLine(ConsoleMessages.Help);
-                    return ResultStatus.OK;
-                case CalculatorOperators.Exit:
-                    return ResultStatus.Exit;
-                default:
-                    throw new NotSupportedException();
-            }
+            var instanceName = "ConsoleCalculator." + Operator;
+            Assembly currentAssembly = Assembly.GetExecutingAssembly();
+            var instance = currentAssembly.CreateInstance(instanceName);
+            var tempMemory = Memory;
+            var tempResult = Result;
+            var status = ((IOperation)instance).Run(ref tempMemory, ref tempResult, Operand1, Operand2);
+            Memory = tempMemory;
+            Result = tempResult;
+            return status;
         }
 
         /*public string ConvertMessageToString(ConsoleMessages message)
