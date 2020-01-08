@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Globalization;
+
 namespace ConsoleCalculator
 {
     public class ConsoleCalculator
@@ -100,6 +102,115 @@ namespace ConsoleCalculator
         /// <returns></returns>
         public ResultStatus ParceString(string inputStr)
         {
+            var separator = new char[] { ' ' };
+            var splittedStr = inputStr.ToUpperInvariant().Split(separator, 3, StringSplitOptions.RemoveEmptyEntries);
+            if (splittedStr.Length == 0)
+            {
+                return ResultStatus.InvalidInput;
+            }
+            if (splittedStr.Length == 1)
+            {
+                if (splittedStr[0].Length == 2)
+                {
+                    switch (splittedStr[0])
+                    {
+                        case "M+":
+                            Operator = CalculatorOperators.MPlus;
+                            return ResultStatus.OK;
+                        case "M-":
+                            Operator = CalculatorOperators.MMinus;
+                            return ResultStatus.OK;
+                        case "MR":
+                            Operator = CalculatorOperators.MR;
+                            return ResultStatus.OK;
+                        case "MC":
+                            Operator = CalculatorOperators.MC;
+                            return ResultStatus.OK;
+                        default:
+                            return ResultStatus.InvalidInput;
+                    }
+                }
+                if (splittedStr[0].Length == 4)
+                {
+                    switch (splittedStr[0])
+                    {
+                        case "HELP":
+                            Operator = CalculatorOperators.Help;
+                            return ResultStatus.OK;
+                        case "EXIT":
+                            Operator = CalculatorOperators.Exit;
+                            return ResultStatus.OK;
+                        default:
+                            return ResultStatus.InvalidInput;
+                    }
+                }
+                return ResultStatus.InvalidInput;
+            }
+            if (splittedStr.Length == 2)
+            {
+                Operand1 = Result;
+                double operand2;
+                if (splittedStr[1] == "MR")
+                    operand2 = Memory;
+                else if (!double.TryParse(splittedStr[1], System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out operand2))
+                    return ResultStatus.InvalidInput;
+                Operand2 = operand2;
+                switch (splittedStr[0])
+                {
+                    case "+":
+                        Operator = CalculatorOperators.Add;
+                        return ResultStatus.OK;
+                    case "-":
+                        Operator = CalculatorOperators.Substract;
+                        return ResultStatus.OK;
+                    case "*":
+                        Operator = CalculatorOperators.Multiply;
+                        return ResultStatus.OK;
+                    case "/":
+                        Operator = CalculatorOperators.Divide;
+                        return ResultStatus.OK;
+                    case "^":
+                        Operator = CalculatorOperators.POW;
+                        return ResultStatus.OK;
+                    default:
+                        return ResultStatus.InvalidInput;
+                }
+            }
+            if (splittedStr.Length == 3)
+            {
+                double operand1;
+                double operand2;
+                if (splittedStr[0] == "MR")
+                    operand1 = Memory;
+                else if (!double.TryParse(splittedStr[0], System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out operand1))
+                    return ResultStatus.InvalidInput;
+                if (splittedStr[2] == "MR")
+                    operand2 = Memory;
+                else if (!double.TryParse(splittedStr[2], System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out operand2))
+                    return ResultStatus.InvalidInput;
+                Operand1 = operand1;
+                Operand2 = operand2;
+                switch (splittedStr[1])
+                {
+                    case "+":
+                        Operator = CalculatorOperators.Add;
+                        return ResultStatus.OK;
+                    case "-":
+                        Operator = CalculatorOperators.Substract;
+                        return ResultStatus.OK;
+                    case "*":
+                        Operator = CalculatorOperators.Multiply;
+                        return ResultStatus.OK;
+                    case "/":
+                        Operator = CalculatorOperators.Divide;
+                        return ResultStatus.OK;
+                    case "^":
+                        Operator = CalculatorOperators.POW;
+                        return ResultStatus.OK;
+                    default:
+                        return ResultStatus.InvalidInput;
+                }
+            }
             return ResultStatus.OK; //TODO пока стоит заглушка
         }
 
@@ -123,10 +234,7 @@ namespace ConsoleCalculator
                     return ResultStatus.OK;
                 case CalculatorOperators.Divide:
                     if (Math.Abs(Operand2) < 1e-10)
-                    {
-                        Console.WriteLine(ConvertMessageToString(ConsoleMessages.DivisionByZero));
                         return ResultStatus.DivisionByZero;
-                    }
                     Result = Operand1 / Operand2;
                     return ResultStatus.OK;
                 case CalculatorOperators.POW:
