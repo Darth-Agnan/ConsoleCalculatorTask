@@ -5,13 +5,13 @@ using System.Reflection;
 
 namespace ConsoleCalculator
 {
-    public abstract class Enumeration : IComparable
+    public abstract class MessagesEnumeration : IComparable
     {
         public string Description { get; private set; }
 
         public int Id { get; private set; }
 
-        protected Enumeration(int id, string description)
+        protected MessagesEnumeration(int id, string description)
         {
             Id = id;
             Description = description;
@@ -19,7 +19,7 @@ namespace ConsoleCalculator
 
         public override string ToString() => Description;
 
-        public static IEnumerable<T> GetAll<T>() where T : Enumeration
+        public static IEnumerable<T> GetAll<T>() where T : MessagesEnumeration
         {
             var fields = typeof(T).GetFields(BindingFlags.Public |
                                              BindingFlags.Static |
@@ -29,7 +29,7 @@ namespace ConsoleCalculator
 
         public override bool Equals(object obj)
         {
-            var otherValue = obj as Enumeration;
+            var otherValue = obj as MessagesEnumeration;
             if (otherValue == null)
                 return false;
             var typeMatches = GetType().Equals(obj.GetType());
@@ -39,13 +39,13 @@ namespace ConsoleCalculator
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return Id.GetHashCode();
         }
 
-        public int CompareTo(object other) => Id.CompareTo(((Enumeration)other).Id);
+        public int CompareTo(object other) => Id.CompareTo(((MessagesEnumeration)other).Id);
     }
 
-    public class ConsoleMessages : Enumeration
+    public class ConsoleMessages : MessagesEnumeration
     {
         public static ConsoleMessages Greeting = new ConsoleMessages(1, @"Добрый день!
 Вас приветствует консольный калькулятор!
@@ -79,6 +79,8 @@ namespace ConsoleCalculator
         public static ConsoleMessages InvalidInput = new ConsoleMessages(4, @"Нам не удалось понять вашу команду.
 Пожалуйста, вводите команды в соответствии с инструкцией к программе.
 Чтобы увидеть инструкцию, введите команду help.");
+        public static ConsoleMessages ToBigInput = new ConsoleMessages(5, @"Вы попытались ввести слишком большую строчку
+или в вашей команде было слишком много аргументов. Обрезаем:");
         
         public ConsoleMessages(int id, string description)
             : base(id, description)

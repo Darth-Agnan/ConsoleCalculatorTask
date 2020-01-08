@@ -1,6 +1,11 @@
 ﻿using System;
 namespace ConsoleCalculator
 {
+    /// <summary>
+    /// Сюда можно добавлять свои действия над операндами.
+    /// После этого команду надо зарегистрировать в классе CalculatorOperators
+    /// </summary>
+
     public class Add : IOperation
     {
         ResultStatus IOperation.Run(ref double memory, ref double result, double operand1, double operand2)

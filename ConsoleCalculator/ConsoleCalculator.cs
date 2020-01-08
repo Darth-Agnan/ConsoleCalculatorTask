@@ -63,11 +63,11 @@ namespace ConsoleCalculator
         /// </summary>
         public void Run()
         {
-            Console.WriteLine(ConsoleMessages.Greeting);
+            PrintInfoMessage(ConsoleMessages.Greeting);
             while (true)
             {
                 var inputStr = Console.ReadLine();
-                if (ParceString(inputStr).Equals(ResultStatus.OK))
+                if (ParseString(inputStr).Equals(ResultStatus.OK))
                 {
                     var status = DoOperation();
                     switch (status)
@@ -79,19 +79,13 @@ namespace ConsoleCalculator
                             Console.WriteLine("Memory: " + Memory);
                             break;
                         case ResultStatus.Help:
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine(ConsoleMessages.Help);
-                            Console.ResetColor();
+                            PrintInfoMessage(ConsoleMessages.Help);
                             break;
                         case ResultStatus.InvalidInput:
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine(ConsoleMessages.InvalidInput);
-                            Console.ResetColor();
+                            PrintErrorMessage(ConsoleMessages.InvalidInput);
                             break;
                         case ResultStatus.DivisionByZero:
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine(ConsoleMessages.DivisionByZero);
-                            Console.ResetColor();
+                            PrintErrorMessage(ConsoleMessages.DivisionByZero);
                             break;
                         case ResultStatus.Exit:
                             return;
@@ -101,11 +95,23 @@ namespace ConsoleCalculator
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(ConsoleMessages.InvalidInput);
-                    Console.ResetColor();
+                    PrintErrorMessage(ConsoleMessages.InvalidInput);
                 }
             }
+        }
+
+        public static void PrintErrorMessage(ConsoleMessages message)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
+
+        public static void PrintInfoMessage(ConsoleMessages message)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(message);
+            Console.ResetColor();
         }
 
         /// <summary>
@@ -115,118 +121,125 @@ namespace ConsoleCalculator
         /// </summary>
         /// <param name="inputStr"></param>
         /// <returns></returns>
-        public ResultStatus ParceString(string inputStr)
+        public ResultStatus ParseString(string str)
         {
-            var separator = new char[] { ' ' };
-            var splittedStr = inputStr.ToUpperInvariant().Split(separator, 3, StringSplitOptions.RemoveEmptyEntries);
-            if (splittedStr.Length == 0)
+            var parsedStr = SplitString(str);
+            var result = new bool[parsedStr.Length];
+            var status = DoubleOrCommandDecider(result, parsedStr);
+            if (status == ResultStatus.InvalidInput)
             {
                 return ResultStatus.InvalidInput;
             }
-            if (splittedStr.Length == 1)
+            var elementsCount = parsedStr.Length;
+            if (elementsCount == 1 && !result[0] && CalculatorOperators.IsOneElementCommand(parsedStr[0]))
             {
-                if (splittedStr[0].Length == 2)
-                {
-                    switch (splittedStr[0])
-                    {
-                        case "M+":
-                            Operator = CalculatorOperators.MPlus;
-                            return ResultStatus.OK;
-                        case "M-":
-                            Operator = CalculatorOperators.MMinus;
-                            return ResultStatus.OK;
-                        case "MR":
-                            Operator = CalculatorOperators.MR;
-                            return ResultStatus.OK;
-                        case "MC":
-                            Operator = CalculatorOperators.MC;
-                            return ResultStatus.OK;
-                        default:
-                            return ResultStatus.InvalidInput;
-                    }
-                }
-                if (splittedStr[0].Length == 4)
-                {
-                    switch (splittedStr[0])
-                    {
-                        case "HELP":
-                            Operator = CalculatorOperators.Help;
-                            return ResultStatus.OK;
-                        case "EXIT":
-                            Operator = CalculatorOperators.Exit;
-                            return ResultStatus.OK;
-                        default:
-                            return ResultStatus.InvalidInput;
-                    }
-                }
-                return ResultStatus.InvalidInput;
+                Operator = StrToOperator(parsedStr[0]);
+                return ResultStatus.OK;
             }
-            if (splittedStr.Length == 2)
+            for (int i = 0; i < elementsCount; i++)
+            {
+                if (CalculatorOperators.IsMR(parsedStr[i]))
+                {
+                    parsedStr[i] = Memory.ToString();
+                    result[i] = true;
+                }
+            }
+            if (elementsCount == 2 && !result[0] & result[1] && !CalculatorOperators.IsOneElementCommand(parsedStr[0]))
             {
                 Operand1 = Result;
-                double operand2;
-                if (splittedStr[1] == "MR")
-                    operand2 = Memory;
-                else if (!double.TryParse(splittedStr[1], System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out operand2))
-                    return ResultStatus.InvalidInput;
-                Operand2 = operand2;
-                switch (splittedStr[0])
-                {
-                    case "+":
-                        Operator = CalculatorOperators.Add;
-                        return ResultStatus.OK;
-                    case "-":
-                        Operator = CalculatorOperators.Substract;
-                        return ResultStatus.OK;
-                    case "*":
-                        Operator = CalculatorOperators.Multiply;
-                        return ResultStatus.OK;
-                    case "/":
-                        Operator = CalculatorOperators.Divide;
-                        return ResultStatus.OK;
-                    case "^":
-                        Operator = CalculatorOperators.POW;
-                        return ResultStatus.OK;
-                    default:
-                        return ResultStatus.InvalidInput;
-                }
+                Operand2 = StrToDouble(parsedStr[1]);
+                Operator = StrToOperator(parsedStr[0]);
+                return ResultStatus.OK;
             }
-            if (splittedStr.Length == 3)
+            if (elementsCount == 3 && result[0] && !result[1] && result[2])
+                if (!CalculatorOperators.IsOneElementCommand(parsedStr[1]))
+                {
+                    Operand1 = StrToDouble(parsedStr[0]);
+                    Operand2 = StrToDouble(parsedStr[2]);
+                    Operator = StrToOperator(parsedStr[1]);
+                    return ResultStatus.OK;
+                }
+            return ResultStatus.InvalidInput;
+        }
+
+        /// <summary>
+        /// Метод предназначен для разделения входящей строки на подстроки.
+        /// При этом обрезаем строку до 80 символов и 3х аргументов.
+        /// </summary>
+        /// <param name="inputStr"></param>
+        /// <returns></returns>
+        public static string[] SplitString(string str)
+        {
+            bool wasModified = false;
+            if (str.Length > 80)
             {
-                double operand1;
-                double operand2;
-                if (splittedStr[0] == "MR")
-                    operand1 = Memory;
-                else if (!double.TryParse(splittedStr[0], System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out operand1))
-                    return ResultStatus.InvalidInput;
-                if (splittedStr[2] == "MR")
-                    operand2 = Memory;
-                else if (!double.TryParse(splittedStr[2], System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out operand2))
-                    return ResultStatus.InvalidInput;
-                Operand1 = operand1;
-                Operand2 = operand2;
-                switch (splittedStr[1])
+                str = str.Substring(0, 80);
+                wasModified = true;
+            }
+            var separator = new char[] { ' ' };
+            var parsedStr = str.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            if (parsedStr.Length > 3)
+            {
+                var tempArray = new string[3];
+                for (int i = 0; i < 3; i++)
+                    tempArray[i] = parsedStr[i];
+                parsedStr = tempArray;
+                wasModified = true;
+            }
+            if (wasModified)
+            {
+                PrintErrorMessage(ConsoleMessages.ToBigInput);
+                Console.WriteLine(string.Join(" ", parsedStr));
+            }
+            return parsedStr;
+        }
+
+        /// <summary>
+        /// Метод-решатель, определяет, находится ли на i-ой позиции в массиве распарсеной строки
+        /// вещественное число (тогда в массиве result записываем true), команда из соответствующего класса
+        /// (тогда false) или какой-то мусор (возвращается InvalidInput)
+        /// </summary>
+        /// <param name="result"></param>
+        /// <param name="parsedStr"></param>
+        /// <returns></returns>
+        public static ResultStatus DoubleOrCommandDecider(bool[] result, string[] parsedStr)
+        {
+            double parsedDouble;
+            for (int i = 0; i < parsedStr.Length; i++)
+            {
+                if (double.TryParse(parsedStr[i], System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out parsedDouble))
                 {
-                    case "+":
-                        Operator = CalculatorOperators.Add;
-                        return ResultStatus.OK;
-                    case "-":
-                        Operator = CalculatorOperators.Substract;
-                        return ResultStatus.OK;
-                    case "*":
-                        Operator = CalculatorOperators.Multiply;
-                        return ResultStatus.OK;
-                    case "/":
-                        Operator = CalculatorOperators.Divide;
-                        return ResultStatus.OK;
-                    case "^":
-                        Operator = CalculatorOperators.POW;
-                        return ResultStatus.OK;
-                    default:
+                    result[i] = true;
+                }
+                else
+                {
+                    if (!CalculatorOperators.Contains(parsedStr[i]))
                         return ResultStatus.InvalidInput;
                 }
             }
-            return ResultStatus.OK; //TODO пока стоит заглушка
+            return ResultStatus.OK;
+        }
+
+        /// <summary>
+        /// Обертка для превращения строки с вещественным числом в вещественное число
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static double StrToDouble(string str)
+        {
+            double parsedDouble;
+            double.TryParse(str, System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out parsedDouble);
+            return parsedDouble;
+        }
+
+        /// <summary>
+        /// Обертка для превращения строки с оператором (командой) в оператор
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static CalculatorOperators StrToOperator(string str)
+        {
+            return CalculatorOperators.FromString(str);
         }
 
         /// <summary>
@@ -238,10 +251,20 @@ namespace ConsoleCalculator
         {
             var instanceName = "ConsoleCalculator." + Operator;
             Assembly currentAssembly = Assembly.GetExecutingAssembly();
-            var instance = currentAssembly.CreateInstance(instanceName);
+            object instance;
+            ResultStatus status;
             var tempMemory = Memory;
             var tempResult = Result;
-            var status = ((IOperation)instance).Run(ref tempMemory, ref tempResult, Operand1, Operand2);
+            try
+            {
+                instance = currentAssembly.CreateInstance(instanceName);
+                status = ((IOperation)instance).Run(ref tempMemory, ref tempResult, Operand1, Operand2);
+            }
+            catch (NullReferenceException e)
+            {
+                Console.WriteLine(e);
+                return ResultStatus.InvalidInput;
+            }                     
             Memory = tempMemory;
             Result = tempResult;
             return status;
