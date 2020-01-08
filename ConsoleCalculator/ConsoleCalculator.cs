@@ -62,7 +62,7 @@ namespace ConsoleCalculator
         /// </summary>
         public void Run()
         {
-            Console.WriteLine(ConvertMessageToString(ConsoleMessages.Greeting));
+            Console.WriteLine(ConsoleMessages.Greeting);
             while (true)
             {
                 var inputStr = Console.ReadLine();
@@ -75,10 +75,10 @@ namespace ConsoleCalculator
                             Console.WriteLine("Result: " + Result);
                             break;
                         case ResultStatus.InvalidInput:
-                            Console.WriteLine(ConvertMessageToString(ConsoleMessages.InvalidInput));
+                            Console.WriteLine(ConsoleMessages.InvalidInput);
                             break;
                         case ResultStatus.DivisionByZero:
-                            Console.WriteLine(ConvertMessageToString(ConsoleMessages.DivisionByZero));
+                            Console.WriteLine(ConsoleMessages.DivisionByZero);
                             break;
                         case ResultStatus.Exit:
                             return;
@@ -88,7 +88,7 @@ namespace ConsoleCalculator
                 }
                 else
                 {
-                    Console.WriteLine(ConvertMessageToString(ConsoleMessages.InvalidInput));
+                    Console.WriteLine(ConsoleMessages.InvalidInput);
                 }
             }
         }
@@ -253,7 +253,7 @@ namespace ConsoleCalculator
                     Memory = 0;
                     return ResultStatus.OK;
                 case CalculatorOperators.Help:
-                    Console.WriteLine(ConvertMessageToString(ConsoleMessages.Help));
+                    Console.WriteLine(ConsoleMessages.Help);
                     return ResultStatus.OK;
                 case CalculatorOperators.Exit:
                     return ResultStatus.Exit;
@@ -262,7 +262,7 @@ namespace ConsoleCalculator
             }
         }
 
-        public string ConvertMessageToString(ConsoleMessages message)
+        /*public string ConvertMessageToString(ConsoleMessages message)
         {
             switch (message)
             {
@@ -305,6 +305,6 @@ namespace ConsoleCalculator
                 default:
                     throw new NotSupportedException();
             }
-        }
+        }*/
     }
 }
