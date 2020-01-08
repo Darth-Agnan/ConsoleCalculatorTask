@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿/*using NUnit.Framework;
 
 namespace ConsoleCalculator
 {
@@ -122,4 +122,4 @@ namespace ConsoleCalculator
             Assert.AreEqual(6, calculator.Result);
         }
     }
-}
+}*/
