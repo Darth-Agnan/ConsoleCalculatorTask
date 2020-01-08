@@ -53,7 +53,7 @@ namespace ConsoleCalculator
         ResultStatus IOperation.Run(ref double memory, ref double result, double operand1, double operand2)
         {
             memory += result;
-            return ResultStatus.OK;
+            return ResultStatus.MemoryOp;
         }
     }
 
@@ -62,7 +62,7 @@ namespace ConsoleCalculator
         ResultStatus IOperation.Run(ref double memory, ref double result, double operand1, double operand2)
         {
             memory -= result;
-            return ResultStatus.OK;
+            return ResultStatus.MemoryOp;
         }
     }
 
@@ -80,7 +80,7 @@ namespace ConsoleCalculator
         ResultStatus IOperation.Run(ref double memory, ref double result, double operand1, double operand2)
         {
             memory = 0;
-            return ResultStatus.OK;
+            return ResultStatus.MemoryOp;
         }
     }
 
@@ -88,8 +88,7 @@ namespace ConsoleCalculator
     {
         ResultStatus IOperation.Run(ref double memory, ref double result, double operand1, double operand2)
         {
-            Console.WriteLine(ConsoleMessages.Help);
-            return ResultStatus.OK;
+            return ResultStatus.Help;
         }
     }
 

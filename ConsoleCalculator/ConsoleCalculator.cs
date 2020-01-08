@@ -75,11 +75,23 @@ namespace ConsoleCalculator
                         case ResultStatus.OK:
                             Console.WriteLine("Result: " + Result);
                             break;
+                        case ResultStatus.MemoryOp:
+                            Console.WriteLine("Memory: " + Memory);
+                            break;
+                        case ResultStatus.Help:
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine(ConsoleMessages.Help);
+                            Console.ResetColor();
+                            break;
                         case ResultStatus.InvalidInput:
+                            Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine(ConsoleMessages.InvalidInput);
+                            Console.ResetColor();
                             break;
                         case ResultStatus.DivisionByZero:
+                            Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine(ConsoleMessages.DivisionByZero);
+                            Console.ResetColor();
                             break;
                         case ResultStatus.Exit:
                             return;
@@ -89,7 +101,9 @@ namespace ConsoleCalculator
                 }
                 else
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine(ConsoleMessages.InvalidInput);
+                    Console.ResetColor();
                 }
             }
         }
@@ -232,50 +246,5 @@ namespace ConsoleCalculator
             Result = tempResult;
             return status;
         }
-
-        /*public string ConvertMessageToString(ConsoleMessages message)
-        {
-            switch (message)
-            {
-                case ConsoleMessages.Greeting:
-                    return @"Добрый день!
-Вас приветствует консольный калькулятор!
-Введите help для получения справочной информации по командам.
-Введите exit для выхода из программы.";
-                case ConsoleMessages.Help:
-                    return @"Справочная информация по командам системы.
-На данный момент в программе поддерживаются команды следующих видов:
-1. Трёхэлементные.
-Команды вида ""Операнд1 Оператор Операнд2""
-В качестве операторов могут выступать символы: '+', '-', '*', '/', 'ˆ'.
-В качестве операндов могут выступать вещественные числа или команда MR
-(команда MR подставляет на место операнда значение из регистра памяти).
-
-2. Двухэлементные.
-Команды вида ""Оператор Операнд2""
-Эта команда соответствует трёхэлементной команде,
-в которой вместо ""Операнд1"" подставлен результат прошлой команды.
-
-3. Одноэлементные.
-Команды вида ""Оператор""
-В качестве оператора могут выступать следующие элементы:
-• M+ - увеличение значения в регистре памяти на последний результат.
-• M- - уменьшение значения в регистре памяти на последний результат.
-• MR - запись в качестве результата значения из регистра памяти.
-• MC - обнуление значения в регистре памяти.
-• help - вывод справочной информации по командам системы.
-• exit - выход из приложения.";
-                case ConsoleMessages.DivisionByZero:
-                    return @"К сожалению, второй операнд равен нулю.
-На ноль делить нельзя!
-Попробуйте другой делитель.";
-                case ConsoleMessages.InvalidInput:
-                    return @"Нам не удалось понять вашу команду.
-Пожалуйста, вводите команды в соответствии с инструкцией к программе.
-Чтобы увидеть инструкцию, введите команду help.";
-                default:
-                    throw new NotSupportedException();
-            }
-        }*/
     }
 }
