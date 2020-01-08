@@ -1,4 +1,6 @@
-﻿/*using NUnit.Framework;
+﻿using System;
+using System.IO;
+using NUnit.Framework;
 
 namespace ConsoleCalculator
 {
@@ -26,100 +28,211 @@ namespace ConsoleCalculator
             Assert.AreEqual(3, calculator.Operand2);
             Assert.AreEqual(CalculatorOperators.Substract, calculator.Operator);
         }
+
+        [Test]
+        public void FullConstructor_Test()
+        {
+            var calculator = new ConsoleCalculator(5, 1, 2, 3, CalculatorOperators.Substract);
+            Assert.AreEqual(5, calculator.Memory);
+            Assert.AreEqual(1, calculator.Result);
+            Assert.AreEqual(2, calculator.Operand1);
+            Assert.AreEqual(3, calculator.Operand2);
+            Assert.AreEqual(CalculatorOperators.Substract, calculator.Operator);
+        }
     }
 
     [TestFixture]
     public class Run_Tests
     {
-        //TODO подумать о целесообразности
+        [Test, Timeout(200)]
+        public void RunEnds_Tests()
+        {
+            var input = new StringReader("Exit");
+            Console.SetIn(input);
+            var calculator = new ConsoleCalculator();
+            Assert.That(calculator.Run, Throws.Nothing);
+        }
+    }
+
+    [TestFixture]
+    public class PrintMessages_Tests
+    {
+        [Test]
+        public void PrintErrorMessage_Test()
+        {
+            var output = new StringWriter();
+            Console.SetOut(output);
+            ConsoleCalculator.PrintErrorMessage(ConsoleMessages.DivisionByZero);
+            Assert.That(output.ToString().Equals(ConsoleMessages.DivisionByZero + "\n"));
+        }
+
+        [Test]
+        public void PrintInfoMessage_Test()
+        {
+            var output = new StringWriter();
+            Console.SetOut(output);
+            ConsoleCalculator.PrintInfoMessage(ConsoleMessages.DivisionByZero);
+            Assert.That(output.ToString().Equals(ConsoleMessages.DivisionByZero + "\n"));
+        }
     }
 
     [TestFixture]
     public class ParceString_Tests
     {
-        //TODO после разработки парсера
+        [Test]
+        public void NoElementCommand_Test()
+        {
+            var calculator = new ConsoleCalculator();
+            var actualResult = calculator.ParseString("");
+            Assert.AreEqual(ResultStatus.InvalidInput, actualResult);
+        }
+
+        [TestCase("Help", ResultStatus.OK)]
+        [TestCase("Exit", ResultStatus.OK)]
+        [TestCase("M+", ResultStatus.OK)]
+        [TestCase("M-", ResultStatus.OK)]
+        [TestCase("MC", ResultStatus.OK)]
+        public void OneElementCorrectCommand_Test(string input, ResultStatus expectedResult)
+        {
+            var calculator = new ConsoleCalculator();
+            var resultStatus = calculator.ParseString(input);
+            var expOperation = CalculatorOperators.FromString(input);
+            Assert.AreEqual(expectedResult, resultStatus);
+            Assert.AreEqual(expOperation, calculator.Operator);
+        }
+
+        [TestCase("MC1", ResultStatus.InvalidInput)]
+        public void OneElementIncorrectCommand_Test(string input, ResultStatus expectedResult)
+        {
+            var calculator = new ConsoleCalculator();
+            var resultStatus = calculator.ParseString(input);
+            var expOperation = CalculatorOperators.Add;
+            Assert.AreEqual(expectedResult, resultStatus);
+            Assert.AreEqual(expOperation, calculator.Operator);
+        }
+
+        [TestCase("* 5", 5, 10, ResultStatus.OK, "*", 5)]
+        [TestCase("- MR", 5, 10, ResultStatus.OK, "-", 5)]
+        [TestCase("/ 0", 5, 10, ResultStatus.OK, "/", 0)]
+        [TestCase("- -5", 5, 10, ResultStatus.OK, "-", -5)]
+        public void TwoElementCorrectCommand_Test(string input, double memoryField, double resultField, ResultStatus expectedResult, string expectedOperation, double expectedOp2)
+        {
+            var calculator = new ConsoleCalculator(memoryField, resultField, 0, 0, CalculatorOperators.Add);
+            var resultStatus = calculator.ParseString(input);
+            var expOperation = CalculatorOperators.FromString(expectedOperation);
+            Assert.AreEqual(expectedResult, resultStatus);
+            Assert.AreEqual(expOperation, calculator.Operator);
+            Assert.AreEqual(resultField, calculator.Operand1);
+            Assert.AreEqual(expectedOp2, calculator.Operand2);
+        }
+
+        [TestCase("-5", ResultStatus.InvalidInput)]
+        [TestCase("5 -", ResultStatus.InvalidInput)]
+        [TestCase("- -", ResultStatus.InvalidInput)]
+        [TestCase("! 0", ResultStatus.InvalidInput)]
+        [TestCase("- !", ResultStatus.InvalidInput)]
+        [TestCase("- M+", ResultStatus.InvalidInput)]
+        [TestCase("M- 5", ResultStatus.InvalidInput)]
+        [TestCase("- help", ResultStatus.InvalidInput)]
+        [TestCase("help exit", ResultStatus.InvalidInput)]
+        public void TwoElementIncorrectCommand_Test(string input, ResultStatus expectedResult)
+        {
+            var calculator = new ConsoleCalculator();
+            var resultStatus = calculator.ParseString(input);
+            var expOperation = CalculatorOperators.Add;
+            Assert.AreEqual(expectedResult, resultStatus);
+            Assert.AreEqual(expOperation, calculator.Operator);
+        }
+
+        [TestCase("1 * 5", 5, 10, ResultStatus.OK, "*", 1, 5)]
+        [TestCase("2 - MR", 5, 10, ResultStatus.OK, "-", 2, 5)]
+        [TestCase("12 / 0", 5, 10, ResultStatus.OK, "/", 12, 0)]
+        [TestCase("6 - -5", 5, 10, ResultStatus.OK, "-", 6, -5)]
+        [TestCase("MR * MR", 5, 10, ResultStatus.OK, "*", 5, 5)]
+        public void ThreeElementCorrectCommand_Test(string input, double memoryField, double resultField, ResultStatus expectedResult, string expectedOperation, double expectedOp1, double expectedOp2)
+        {
+            var calculator = new ConsoleCalculator(memoryField, resultField, 0, 0, CalculatorOperators.Add);
+            var resultStatus = calculator.ParseString(input);
+            var expOperation = CalculatorOperators.FromString(expectedOperation);
+            Assert.AreEqual(expectedResult, resultStatus);
+            Assert.AreEqual(expOperation, calculator.Operator);
+            Assert.AreEqual(expOperation, calculator.Operator);
+            Assert.AreEqual(expectedOp1, calculator.Operand1);
+            Assert.AreEqual(expectedOp2, calculator.Operand2);
+        }
+
+        [TestCase("5-5", ResultStatus.InvalidInput)]
+        [TestCase("5- 5", ResultStatus.InvalidInput)]
+        [TestCase("5 -5", ResultStatus.InvalidInput)]
+        [TestCase("5 - s", ResultStatus.InvalidInput)]
+        [TestCase("5 s -", ResultStatus.InvalidInput)]
+        [TestCase("! * 0", ResultStatus.InvalidInput)]
+        [TestCase("! - !", ResultStatus.InvalidInput)]
+        [TestCase("! ! !", ResultStatus.InvalidInput)]
+        [TestCase("- 5 -", ResultStatus.InvalidInput)]
+        [TestCase("- 5 5", ResultStatus.InvalidInput)]
+        [TestCase("5 5 -", ResultStatus.InvalidInput)]
+        [TestCase("5 5 5", ResultStatus.InvalidInput)]
+        [TestCase("5 MR 5", ResultStatus.InvalidInput)]
+        public void ThreeElementIncorrectCommand_Test(string input, ResultStatus expectedResult)
+        {
+            var calculator = new ConsoleCalculator();
+            var resultStatus = calculator.ParseString(input);
+            var expOperation = CalculatorOperators.Add;
+            Assert.AreEqual(expectedResult, resultStatus);
+            Assert.AreEqual(expOperation, calculator.Operator);
+        }
+
+        [TestCase("5 + 2 / 4", ResultStatus.OK)]
+        [TestCase("+ 2 / 4", ResultStatus.InvalidInput)]
+        public void MoreThanThreeElementCommand_Test(string str, ResultStatus expectedResult)
+        {
+            var calculator = new ConsoleCalculator();
+            var resultStatus = calculator.ParseString(str);
+            Assert.AreEqual(expectedResult, resultStatus);
+        }
     }
 
     [TestFixture]
-    public class DoOperation_Tests
-    {
-        [TestCase(1, 2, CalculatorOperators.Add, 3)]
-        [TestCase(1, 2, CalculatorOperators.Substract, -1)]
-        [TestCase(4, 5, CalculatorOperators.Multiply, 20)]
-        [TestCase(4, 5, CalculatorOperators.Divide, 0.8)]
-        [TestCase(2, 10, CalculatorOperators.POW, 1024)]
-        [TestCase(1024, 0.5, CalculatorOperators.POW, 32)]
-        public void DoOperation_SimpleOperations_Test(double operand1, double operand2, CalculatorOperators operator1, double expected)
-        {
-            var calculator = new ConsoleCalculator(operand1, operand2, operator1);
-            var actualResultStatus = calculator.DoOperation();
-            Assert.AreEqual(expected, calculator.Result);
-            Assert.AreEqual(ResultStatus.OK, actualResultStatus);
-        }
-
-        [TestCase(1, 2, CalculatorOperators.MPlus, 1, 3)]
-        [TestCase(1, 2, CalculatorOperators.MMinus, 1, 1)]
-        [TestCase(4, 5, CalculatorOperators.MR, 5, 5)]
-        [TestCase(4, 5, CalculatorOperators.MC, 4, 0)]
-        public void DoOperation_MemoryOperations_Test(double initialResult, double initialMemory, CalculatorOperators operator1, double expectedResult, double expectedMemory)
-        {
-            var calculator = new ConsoleCalculator(initialMemory, initialResult, 0, 0, operator1);
-            var actualResultStatus = calculator.DoOperation();
-            Assert.AreEqual(expectedResult, calculator.Result);
-            Assert.AreEqual(expectedMemory, calculator.Memory);
-            Assert.AreEqual(ResultStatus.OK, actualResultStatus);
-        }
-
-        [Test]
-        public void DoOperation_Help_Test()
-        {
-            var calculator = new ConsoleCalculator(2, 3, CalculatorOperators.Help);
-            var actualResultStatus = calculator.DoOperation();
-            Assert.AreEqual(ResultStatus.OK, actualResultStatus);
-        }
-
-        [Test]
-        public void DoOperation_Exit_Test()
-        {
-            var calculator = new ConsoleCalculator(2, 3, CalculatorOperators.Exit);
-            var actualResultStatus = calculator.DoOperation();
-            Assert.AreEqual(ResultStatus.Exit, actualResultStatus);
-        }
-
-        [Test]
-        public void DoOperation_DivByZero_Test()
-        {
-            var calculator = new ConsoleCalculator(2, 0, CalculatorOperators.Divide);
-            var actualResultStatus = calculator.DoOperation();
-            Assert.AreEqual(ResultStatus.DivisionByZero, actualResultStatus);
-        }
-    }
-
-    [TestFixture]
-    public class DoOperation1_Tests
+    public class SplitString_Tests
     {
         [Test]
-        public void DoOperation_Test1()
+        public void SplitStringEmptyString_Test()
         {
-            var calculator = new ConsoleCalculator(2, 3, CalculatorOperators.Add);
-            calculator.DoOperation();
-            Assert.AreEqual(5, calculator.Result);
+            var actualResult = ConsoleCalculator.SplitString("").Length;
+            Assert.AreEqual(0, actualResult);
         }
 
         [Test]
-        public void DoOperation_Test2()
+        public void SplitStringLongString_Test()
         {
-            var calculator = new ConsoleCalculator(2, 3, CalculatorOperators.Substract);
-            calculator.DoOperation();
-            Assert.AreEqual(-1, calculator.Result);
+            var actualResult = ConsoleCalculator.SplitString("gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")[0].Length;
+            Assert.AreEqual(80, actualResult);
         }
 
         [Test]
-        public void DoOperation_Test3()
+        public void SplitStringTwoElements_Test()
         {
-            var calculator = new ConsoleCalculator(2, 3, CalculatorOperators.Multiply);
-            calculator.DoOperation();
-            Assert.AreEqual(6, calculator.Result);
+            var actualResult = ConsoleCalculator.SplitString("5 +");
+            var expectedResult = new string[] { "5", "+" };
+            Assert.AreEqual(2, actualResult.Length);
+            Assert.AreEqual(expectedResult, actualResult);
+        }
+
+        [Test]
+        public void SplitStringManyElements_Test()
+        {
+            var actualResult = ConsoleCalculator.SplitString("5 + 2 + 6 + 7 + 8 + 9");
+            var expectedResult = new string[] { "5", "+", "2" };
+            Assert.AreEqual(3, actualResult.Length);
+            Assert.AreEqual(expectedResult, actualResult);
+        }
+
+        [Test]
+        public void SplitStringManySpacers_Test()
+        {
+            var actualResult = ConsoleCalculator.SplitString("   5   +    5     ").Length;
+            Assert.AreEqual(3, actualResult);
         }
     }
-}*/
+}

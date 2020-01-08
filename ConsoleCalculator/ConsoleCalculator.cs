@@ -20,6 +20,7 @@ namespace ConsoleCalculator
         {
             Memory = 0;
             Result = 0;
+            Operator = CalculatorOperators.Add;
         }
 
         /// <summary>
