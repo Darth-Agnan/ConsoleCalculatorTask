@@ -74,10 +74,10 @@ namespace ConsoleCalculator
                     switch (status)
                     {
                         case ResultStatus.OK:
-                            Console.WriteLine("Result: " + Result);
+                            Console.WriteLine("Результат: " + Result);
                             break;
                         case ResultStatus.MemoryOp:
-                            Console.WriteLine("Memory: " + Memory);
+                            Console.WriteLine("Память: " + Memory);
                             break;
                         case ResultStatus.Help:
                             PrintInfoMessage(ConsoleMessages.Help);

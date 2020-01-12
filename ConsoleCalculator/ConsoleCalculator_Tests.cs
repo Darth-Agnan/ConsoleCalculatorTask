@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using NUnit.Framework;
 
 namespace ConsoleCalculator
@@ -52,6 +53,33 @@ namespace ConsoleCalculator
             var calculator = new ConsoleCalculator();
             Assert.That(calculator.Run, Throws.Nothing);
         }
+        //TODO тесты на все ветви свича
+
+        [Test, Timeout(200)]
+        public void RunAllSwitchBranches_Tests()
+        {
+            var inputStrings = new StringBuilder();
+            inputStrings.AppendLine("0 + 0");
+            inputStrings.AppendLine("MC");
+            inputStrings.AppendLine("help");
+            inputStrings.AppendLine("asdasdas");
+            inputStrings.AppendLine("0 / 0");
+            inputStrings.AppendLine("exit");
+            var outputStrings = new StringBuilder();
+            outputStrings.AppendLine(ConsoleMessages.Greeting.Description);
+            outputStrings.AppendLine("Результат: 0");
+            outputStrings.AppendLine("Память: 0");
+            outputStrings.AppendLine(ConsoleMessages.Help.Description);
+            outputStrings.AppendLine(ConsoleMessages.InvalidInput.Description);
+            outputStrings.AppendLine(ConsoleMessages.DivisionByZero.Description);
+            var input = new StringReader(inputStrings.ToString());
+            var output = new StringWriter();
+            Console.SetIn(input);
+            Console.SetOut(output);
+            var calculator = new ConsoleCalculator();
+            Assert.That(calculator.Run, Throws.Nothing);
+            Assert.AreEqual(outputStrings.ToString(), output.ToString());
+        }
     }
 
     [TestFixture]
@@ -63,7 +91,9 @@ namespace ConsoleCalculator
             var output = new StringWriter();
             Console.SetOut(output);
             ConsoleCalculator.PrintErrorMessage(ConsoleMessages.DivisionByZero);
-            Assert.That(output.ToString().Equals(ConsoleMessages.DivisionByZero + "\n"));
+            var winStyleEquals = output.ToString().Equals(ConsoleMessages.DivisionByZero + "\r\n");
+            var linStyleEquals = output.ToString().Equals(ConsoleMessages.DivisionByZero + "\n");
+            Assert.That(winStyleEquals || linStyleEquals);
         }
 
         [Test]
@@ -72,12 +102,14 @@ namespace ConsoleCalculator
             var output = new StringWriter();
             Console.SetOut(output);
             ConsoleCalculator.PrintInfoMessage(ConsoleMessages.DivisionByZero);
-            Assert.That(output.ToString().Equals(ConsoleMessages.DivisionByZero + "\n"));
+            var winStyleEquals = output.ToString().Equals(ConsoleMessages.DivisionByZero + "\r\n");
+            var linStyleEquals = output.ToString().Equals(ConsoleMessages.DivisionByZero + "\n");
+            Assert.That(winStyleEquals || linStyleEquals);
         }
     }
 
     [TestFixture]
-    public class ParceString_Tests
+    public class ParseString_Tests
     {
         [Test]
         public void NoElementCommand_Test()
@@ -92,6 +124,7 @@ namespace ConsoleCalculator
         [TestCase("M+", ResultStatus.OK)]
         [TestCase("M-", ResultStatus.OK)]
         [TestCase("MC", ResultStatus.OK)]
+        [TestCase("MR", ResultStatus.OK)]
         public void OneElementCorrectCommand_Test(string input, ResultStatus expectedResult)
         {
             var calculator = new ConsoleCalculator();
@@ -233,6 +266,121 @@ namespace ConsoleCalculator
         {
             var actualResult = ConsoleCalculator.SplitString("   5   +    5     ").Length;
             Assert.AreEqual(3, actualResult);
+        }
+
+        [Test]
+        public void SplitStringErrorMessage_Test()
+        {
+            var inputStrings = new StringBuilder();
+            inputStrings.AppendLine("0 + 0 + 2");
+            inputStrings.AppendLine("exit");
+            var outputStrings = new StringBuilder();
+            outputStrings.AppendLine(ConsoleMessages.Greeting.Description);
+            outputStrings.AppendLine(ConsoleMessages.ToBigInput.Description);
+            outputStrings.AppendLine("0 + 0");
+            outputStrings.AppendLine("Результат: 0");
+            var input = new StringReader(inputStrings.ToString());
+            var output = new StringWriter();
+            Console.SetIn(input);
+            Console.SetOut(output);
+            var calculator = new ConsoleCalculator();
+            Assert.That(calculator.Run, Throws.Nothing);
+            Assert.AreEqual(outputStrings.ToString(), output.ToString());
+        }
+    }
+
+    [TestFixture]
+    public class DoubleOrCommandDecider_Tests
+    {
+        [Test]
+        public void DoubleOrCommandEmptyArrs_Test()
+        {
+            var result = new bool[0];
+            var parcedStr = new string[0];
+            var actualResult = ConsoleCalculator.DoubleOrCommandDecider(result, parcedStr);
+            Assert.AreEqual(ResultStatus.OK, actualResult);
+        }
+
+        [Test]
+        public void DoubleOrCommandAsDouble_Test()
+        {
+            var result = new bool[] { false };
+            var parcedStr = new string[] { "0.18535485" };
+            var actualResult = ConsoleCalculator.DoubleOrCommandDecider(result, parcedStr);
+            Assert.AreEqual(ResultStatus.OK, actualResult);
+            Assert.AreEqual(new bool[] { true }, result);
+        }
+
+        [Test]
+        public void DoubleOrCommandAsCommand_Test()
+        {
+            var result = new bool[] { false };
+            var parcedStr = new string[] { "exit" };
+            var actualResult = ConsoleCalculator.DoubleOrCommandDecider(result, parcedStr);
+            Assert.AreEqual(ResultStatus.OK, actualResult);
+            Assert.AreEqual(new bool[] { false }, result);
+        }
+
+        [Test]
+        public void DoubleOrCommandMixedResult_Test()
+        {
+            var result = new bool[] { false, false, false, false };
+            var parcedStr = new string[] { "exit", "help", "0", "68465.41354138" };
+            var actualResult = ConsoleCalculator.DoubleOrCommandDecider(result, parcedStr);
+            Assert.AreEqual(ResultStatus.OK, actualResult);
+            Assert.AreEqual(new bool[] { false, false, true, true }, result);
+        }
+    }
+
+    [TestFixture]
+    public class StrToDouble_Tests
+    {
+        [TestCase("0", 0)]
+        [TestCase("1.1865", 1.1865)]
+        [TestCase("1,1865", 11865)]
+        [TestCase("-0", 0)]
+        [TestCase("-0.8453", -0.8453)]
+        public void StrToDouble_Test(string str, double expectedResult)
+        {
+            var actualResult = ConsoleCalculator.StrToDouble(str);
+            Assert.AreEqual(expectedResult, actualResult);
+        }
+    }
+
+    [TestFixture]
+    public class StrToOperator_Tests
+    {
+        [TestCase("+", "Add")]
+        [TestCase("-", "Substract")]
+        [TestCase("*", "Multiply")]
+        [TestCase("/", "Divide")]
+        [TestCase("^", "POW")]
+        [TestCase("M+", "MPlus")]
+        [TestCase("M-", "MMinus")]
+        [TestCase("MR", "MR")]
+        [TestCase("MC", "MC")]
+        [TestCase("Help", "Help")]
+        [TestCase("Exit", "Exit")]
+        [TestCase("mR", "MR")]
+        public void StrToDouble_Test(string str, string operatorName)
+        {
+            var actualResult = ConsoleCalculator.StrToOperator(str).Name;
+            Assert.AreEqual(operatorName, actualResult);
+        }
+    }
+
+    [TestFixture]
+    public class DoOperation_Tests
+    {
+        [Test]
+        public void DoOperationExisting_Test()
+        {
+            var operand1 = 3;
+            var operand2 = 4;
+            var calculator = new ConsoleCalculator(1, 2, operand1, operand2, CalculatorOperators.Add);
+            var actualResult = calculator.DoOperation();
+            Assert.AreEqual(operand1 + operand2, calculator.Result);
+            Assert.AreEqual(ResultStatus.OK, actualResult);
         }
     }
 }
